@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Escape Enoch</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            position: fixed;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #screen-fader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 200;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        #warning-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #warning-modal h2 {
+            font-size: 32px;
+            color: #ffaa00;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        #warning-modal p {
+            max-width: 450px;
+            color: #ddd;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+
+        .skip-btn, .menu-btn {
+            background: rgba(255, 170, 0, 0.2);
+            border: 1px solid #ffaa00;
+            color: #ffaa00;
+            padding: 8px 18px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 16px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s ease;
+            margin: 4px;
+        }
+
+        .skip-btn:hover, .menu-btn:hover {
+            background: rgba(255, 170, 0, 0.5);
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+        }
+
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            text-shadow: 0 0 8px rgba(0,0,0,0.9);
+        }
+
+        .title-box h1 {
+            font-size: 22px;
+            color: #ff3333;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .title-box p {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .status-box {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+            text-align: right;
+        }
+
+        .task-count {
+            font-size: 15px;
+            font-weight: bold;
+            color: #00ffcc;
+        }
+
+        .coin-display {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffcc00;
+            margin-top: 4px;
+            text-shadow: 0 0 6px rgba(255, 204, 0, 0.4);
+        }
+
+        .objective {
+            font-size: 12px;
+            color: #ffcc00;
+            margin-top: 3px;
+        }
+
+        #task-toggle-btn {
+            position: absolute;
+            top: 90px;
+            left: 15px;
+            background: rgba(0, 255, 204, 0.25);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 20;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            touch-action: auto;
+        }
+
+        #task-list-panel {
+            position: absolute;
+            top: 130px;
+            left: 15px;
+            background: rgba(10, 14, 23, 0.92);
+            border: 1px solid #00ffcc;
+            border-radius: 10px;
+            padding: 12px 16px;
+            max-width: 320px;
+            z-index: 20;
+            pointer-events: auto;
+            display: none;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+            backdrop-filter: blur(6px);
+            max-height: 60vh;
+            overflow-y: auto;
+            touch-action: pan-y !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #task-list-panel h3 {
+            font-size: 14px;
+            color: #00ffcc;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+            padding-bottom: 4px;
+            letter-spacing: 1px;
+        }
+
+        .task-item {
+            font-size: 11px;
+            margin: 6px 0;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .task-status-tag {
+            font-weight: bold;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 51, 51, 0.2);
+            border: 1px solid #ff3333;
+            color: #ff3333;
+            white-space: nowrap;
+        }
+
+        .task-item.done {
+            color: #00ffcc;
+            text-decoration: line-through;
+        }
+
+        .task-item.done .task-status-tag {
+            background: rgba(0, 255, 204, 0.2);
+            border-color: #00ffcc;
+            color: #00ffcc;
+            text-decoration: none !important;
+            display: inline-block;
+        }
+
+        #stamina-container {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 12;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+        }
+
+        #stamina-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #ffaa00, #ffff00);
+            box-shadow: 0 0 8px #ffcc00;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: width 0.05s linear;
+        }
+
+        #stamina-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 3px #000;
+            z-index: 13;
+        }
+
+        #reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 11;
+            box-shadow: 0 0 4px rgba(0,0,0,0.8);
+        }
+
+        #interaction-prompt {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+            z-index: 12;
+        }
+
+        #danger-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: inset 0 0 100px rgba(255, 0, 0, 0);
+            transition: box-shadow 0.2s ease;
+        }
+
+        #touch-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 20px;
+        }
+
+        .joystick-zone {
+            width: 140px;
+            height: 140px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        .joystick-knob {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            position: absolute;
+            top: 45px;
+            left: 45px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+            margin-right: 10px;
+        }
+
+        .action-button {
+            width: 75px;
+            height: 75px;
+            background: rgba(0, 255, 204, 0.25);
+            border: 2px solid #00ffcc;
+            border-radius: 50%;
+            color: #00ffcc;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            touch-action: none;
+            text-shadow: 0 0 5px #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+
+        .action-button:active, .action-button.active {
+            background: rgba(0, 255, 204, 0.6);
+            color: #000;
+        }
+
+        .sprint-button {
+            background: rgba(255, 170, 0, 0.25);
+            border-color: #ffaa00;
+            color: #ffaa00;
+            text-shadow: 0 0 5px #ffaa00;
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+        }
+
+        .sprint-button.active {
+            background: rgba(255, 170, 0, 0.7);
+            color: #000;
+        }
+
+        #item-action-bar {
+            position: absolute;
+            top: 15px;
+            right: 160px;
+            display: flex;
+            gap: 10px;
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        .special-item-btn {
+            position: relative;
+            background: rgba(153, 51, 255, 0.3);
+            border: 3px solid #ff3333;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(153, 51, 255, 0.4);
+            display: none;
+            overflow: hidden;
+            transition: background 0.2s;
+            touch-action: auto;
+        }
+
+        .special-item-btn.active-mode {
+            background: rgba(153, 51, 255, 0.8);
+            box-shadow: 0 0 15px #9933ff;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.45);
+            border-bottom: 4px solid #ff3333;
+            transform-origin: bottom;
+            transform: scaleY(0);
+            pointer-events: none;
+        }
+
+        #puzzle-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 15, 0.95);
+            z-index: 80;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .puzzle-container {
+            background: #0a0e17;
+            border: 2px solid #00ffcc;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.25);
+            max-width: 98vw;
+        }
+
+        .puzzle-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .puzzle-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #00ffcc;
+            letter-spacing: 1px;
+        }
+
+        .layer-tracker {
+            display: flex;
+            gap: 5px;
+        }
+
+        .layer-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #223;
+            border: 1px solid #00ffcc;
+        }
+
+        .layer-dot.done {
+            background: #00ffcc;
+            box-shadow: 0 0 6px #00ffcc;
+        }
+
+        .layer-dot.active {
+            background: #ffcc00;
+            box-shadow: 0 0 6px #ffcc00;
+        }
+
+        #puzzle-board-wrapper {
+            position: relative;
+            background: #141b2d;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #2a3859;
+            touch-action: none;
+        }
+
+        #puzzle-svg {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(100% - 8px);
+            height: calc(100% - 8px);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 2px;
+        }
+
+        .puzzle-cell {
+            width: 32px;
+            height: 32px;
+            background: #0d1322;
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        @media (max-height: 650px) {
+            .puzzle-cell {
+                width: 26px;
+                height: 26px;
+            }
+        }
+
+        .wire-node {
+            width: 82%;
+            height: 82%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 11px;
+            color: #fff;
+            text-shadow: 0 0 2px #000;
+            z-index: 10;
+            box-shadow: 0 0 6px rgba(0,0,0,0.8);
+            transition: transform 0.1s ease;
+        }
+
+        .wire-node.connected {
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .puzzle-controls {
+            margin-top: 8px;
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .puzzle-btn {
+            background: rgba(255, 51, 51, 0.2);
+            border: 1px solid #ff3333;
+            color: #ff3333;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: auto;
+        }
+
+        .puzzle-btn.refresh {
+            background: rgba(0, 255, 204, 0.2);
+            border-color: #00ffcc;
+            color: #00ffcc;
+        }
+
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 10, 0.92);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            font-size: 20px;
+            letter-spacing: 1.5px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .modal p {
+            max-width: 400px;
+            color: #ccc;
+            line-height: 1.25;
+            margin-bottom: 6px;
+            font-size: 10.5px;
+        }
+
+        .modal button {
+            background: #ff3333;
+            color: #fff;
+            border: none;
+            padding: 7px 18px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            border-radius: 18px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            touch-action: auto;
+        }
+
+        .modal button:hover {
+            background: #ff5555;
+            transform: scale(1.05);
+        }
+
+        #shop-modal {
+            display: none;
+            z-index: 120;
+            background: rgba(8, 12, 22, 0.96);
+            touch-action: auto;
+            padding: 6px;
+        }
+
+        #shop-modal h2 {
+            font-size: 16px;
+            margin-bottom: 1px;
+        }
+
+        #shop-modal p#shop-coins-text {
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            max-width: 440px;
+            width: 96vw;
+            margin-bottom: 6px;
+            max-height: 70vh; /* Expanded viewable height for easier scrolling */
+            overflow-y: auto;
+            padding: 4px;
+            touch-action: pan-y !important; /* Enables smooth vertical scrolling on touch devices */
+            -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS/iPadOS */
+        }
+
+        .shop-item-card {
+            background: rgba(20, 28, 45, 0.88);
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            padding: 5px 7px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .shop-item-card h4 {
+            color: #00ffcc;
+            font-size: 9.5px;
+            margin-bottom: 1px;
+        }
+
+        .shop-item-card p {
+            font-size: 8.5px;
+            color: #aaa;
+            margin-bottom: 3px;
+            line-height: 1.1;
+        }
+
+        .shop-buy-btn {
+            background: rgba(0, 255, 204, 0.2);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 2.5px 7px;
+            border-radius: 8px;
+            font-size: 8.5px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-start;
+            touch-action: auto;
+        }
+
+        .shop-buy-btn.purchased {
+            background: rgba(0, 255, 204, 0.6);
+            color: #000;
+            cursor: default;
+        }
+
+        #victory-modal h2 { color: #00ffcc; }
+        #gameover-modal h2 { color: #ff3333; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-fader"></div>
+
+    <div id="canvas-container"></div>
+    <div id="danger-overlay"></div>
+    <div id="reticle"></div>
+
+    <div id="interaction-prompt">PRESS INTERACT</div>
+
+    <div id="warning-modal">
+        <h2>⚠️ ALPHA WARNING ⚠️</h2>
+        <p>This game is still in alpha, expect bugs.</p>
+        <button class="skip-btn" id="skip-warning-btn">SKIP WARNING</button>
+    </div>
+
+    <button id="task-toggle-btn">📋 TASKS (10)</button>
+    <div id="task-list-panel">
+        <h3>FACILITY TASKS (10)</h3>
+        <div id="task-items-container"></div>
+    </div>
+
+    <div id="stamina-container">
+        <div id="stamina-bar"></div>
+        <div id="stamina-text">100%</div>
+    </div>
+
+    <div id="item-action-bar">
+        <button id="bat-btn" class="special-item-btn">⚾ STUN BAT<div class="cooldown-overlay" id="cd-bat"></div></button>
+        <button id="shave-btn" class="special-item-btn">✂️ SHAVE MODE</button>
+        <button id="tickle-btn" class="special-item-btn">🪶 TICKLE<div class="cooldown-overlay" id="cd-tickle"></div></button>
+        <button id="push-btn" class="special-item-btn">💥 PUSH<div class="cooldown-overlay" id="cd-push"></div></button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-header">
+            <div class="title-box">
+                <h1>ESCAPE ENOCH</h1>
+                <p>1ST PERSON SURVIVAL</p>
+            </div>
+            <div class="status-box">
+                <div class="task-count" id="task-status">TASKS COMPLETED: 0 / 10</div>
+                <div class="coin-display" id="coin-hud">🪙 COINS: 0</div>
+                <div class="objective" id="obj-status">Complete all 10 facility tasks!</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="touch-controls">
+        <div class="joystick-zone" id="joystick-zone">
+            <div class="joystick-knob" id="joystick-knob"></div>
+        </div>
+        <div class="btn-group">
+            <div class="action-button sprint-button" id="sprint-btn">SPRINT</div>
+            <div class="action-button" id="repair-btn">INTERACT</div>
+        </div>
+    </div>
+
+    <div id="puzzle-modal">
+        <div class="puzzle-container">
+            <div class="puzzle-header">
+                <div class="puzzle-title" id="puzzle-gen-title">TASK</div>
+                <div class="layer-tracker">
+                    <div class="layer-dot" id="ld-0"></div>
+                    <div class="layer-dot" id="ld-1"></div>
+                    <div class="layer-dot" id="ld-2"></div>
+                    <div class="layer-dot" id="ld-3"></div>
+                    <div class="layer-dot" id="ld-4"></div>
+                </div>
+            </div>
+            <div id="puzzle-board-wrapper">
+                <svg id="puzzle-svg"></svg>
+                <div id="puzzle-board"></div>
+            </div>
+            <div class="puzzle-controls">
+                <button class="puzzle-btn refresh" id="btn-refresh-layer">RESET LAYER</button>
+                <button class="puzzle-btn" id="btn-exit-puzzle">BACK OUT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="start-modal" class="modal" style="display: none;">
+        <h2 style="color: #ff3333;">ESCAPE ENOCH</h2>
+        <p><b>10 Facility Tasks & Upgrade Shop!</b><br>
+        • Complete <b>10 total tasks</b> to reveal the Exit Portal.<br>
+        • Earn <b>10 coins</b> every time you successfully escape!<br>
+        • Visit the <b>Upgrade Shop</b> to buy powerful abilities and perks.</p>
+        <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+            <button id="start-btn">START SURVIVAL</button>
+            <button class="menu-btn" id="open-shop-btn">🛒 UPGRADE SHOP</button>
+        </div>
+    </div>
+
+    <div id="shop-modal" class="modal">
+        <h2 style="color: #00ffcc;">UPGRADE SHOP</h2>
+        <p id="shop-coins-text" style="color: #ffcc00; font-weight: bold;">COINS: 0</p>
+        <div class="shop-grid" id="shop-items-grid"></div>
+        <button class="menu-btn" id="close-shop-btn">BACK TO MENU</button>
+    </div>
+
+    <div id="victory-modal" class="modal" style="display: none;">
+        <h2>YOU ESCAPED!</h2>
+        <p id="victory-coin-msg">You earned +10 coins!</p>
+        <button onclick="returnToMainMenu()">MAIN MENU</button>
+    </div>
+
+    <div id="gameover-modal" class="modal" style="display: none;">
+        <h2>ENOCH CAUGHT YOU</h2>
+        <p>Enoch got you before you could escape...</p>
+        <button onclick="returnToMainMenu()">MAIN MENU</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let SAVE = {
+            coins: 0,
+            upgrades: {
+                speed20: false,
+                speed30: false,
+                bat: false,
+                shaver: false,
+                tickle: false,
+                push: false,
+                extra1: false,
+                extra2: false
+            }
+        };
+
+        function saveGame() {
+            try { localStorage.setItem('escape_enoch_save', JSON.stringify(SAVE)); } catch(e){}
+        }
+
+        function loadGame() {
+            try {
+                const data = localStorage.getItem('escape_enoch_save');
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    SAVE.coins = parsed.coins || 0;
+                    if (parsed.upgrades) {
+                        for (let k in parsed.upgrades) {
+                            if (SAVE.upgrades.hasOwnProperty(k)) SAVE.upgrades[k] = parsed.upgrades[k];
+                        }
+                    }
+                }
+            } catch(e){}
+        }
+        loadGame();
+
+        const upgradesData = [
+            { id: 'speed20', name: '20% Speed Boost', cost: 10, desc: 'Permanently increases walking & sprinting speed by 20%.', once: true },
+            { id: 'speed30', name: '30% Speed Boost', cost: 40, desc: 'Permanently increases movement speed by an additional 30%.', once: true },
+            { id: 'bat', name: 'Stun Bat', cost: 60, desc: 'Stuns Enoch for 3 seconds. (20s Cooldown)', once: true },
+            { id: 'shaver', name: 'Hair Trimmer', cost: 100, desc: 'Freely shave Enoch\'s hair by dragging your finger in shave mode.', once: true },
+            { id: 'tickle', name: 'Tickle Kit', cost: 120, desc: 'Tickle Enoch for invincibility frames + 2s immunity. (15s CD)', once: true },
+            { id: 'push', name: 'Heavy Push', cost: 140, desc: 'Push Enoch back with knockback and ground stun. (5s Cooldown)', once: true },
+            { id: 'extra1', name: 'Stamina Regen Boost', cost: 50, desc: 'Increases stamina recovery rate by 50%.', once: true },
+            { id: 'extra2', name: 'Flashlight Refurb', cost: 70, desc: 'Broadens flashlight beam and doubles illumination range.', once: true }
+        ];
+
+        function initShopUI() {
+            const grid = document.getElementById('shop-items-grid');
+            grid.innerHTML = '';
+            document.getElementById('shop-coins-text').innerText = `COINS: ${SAVE.coins}`;
+
+            upgradesData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'shop-item-card';
+                const owned = SAVE.upgrades[item.id];
+                card.innerHTML = `
+                    <div>
+                        <h4>${item.name} (${item.cost} 🪙)</h4>
+                        <p>${item.desc}</p>
+                    </div>
+                    <button class="shop-buy-btn ${owned ? 'purchased' : ''}" data-id="${item.id}">
+                        ${owned ? 'PURCHASED' : 'BUY'}
+                    </button>
+                `;
+                const btn = card.querySelector('.shop-buy-btn');
+                if (!owned) {
+                    btn.addEventListener('click', () => {
+                        if (SAVE.coins >= item.cost) {
+                            SAVE.coins -= item.cost;
+                            SAVE.upgrades[item.id] = true;
+                            saveGame();
+                            initShopUI();
+                        } else {
+                            alert('Not enough coins!');
+                        }
+                    });
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('open-shop-btn').addEventListener('click', () => {
+            initShopUI();
+            document.getElementById('start-modal').style.display = 'none';
+            document.getElementById('shop-modal').style.display = 'flex';
+        });
+
+        document.getElementById('close-shop-btn').addEventListener('click', () => {
+            document.getElementById('shop-modal').style.display = 'none';
+            document.getElementById('start-modal').style.display = 'flex';
+        });
+
+        function returnToMainMenu() {
+            location.reload();
+        }
+
+        const GAME = {
+            started: false,
+            ended: false,
+            tasksRequired: 10,
+            tasksCompleted: 0,
+            activeTaskStation: null,
+            inPuzzle: false,
+            
+            walkSpeed: 4.8 * (SAVE.upgrades.speed20 ? 1.2 : 1) * (SAVE.upgrades.speed30 ? 1.3 : 1),
+            sprintSpeed: 9.0 * (SAVE.upgrades.speed20 ? 1.2 : 1) * (SAVE.upgrades.speed30 ? 1.3 : 1),
+            
+            enochWanderSpeed: 2.6,
+            enochChaseSpeed: 5.5,
+            enochDetectRadius: 32,
+            enochFOV: Math.PI * 0.65,
+            enochKillRadius: 1.8,
+            mapSize: 300,
+            wallHeight: 5,
+
+            maxStamina: 100,
+            stamina: 100,
+            sprinting: false,
+            sprintDrainRate: 10,
+            staminaRegenRate: 20 * (SAVE.upgrades.extra1 ? 1.5 : 1),
+            staminaRegenTimer: 0.2,
+            sprintDurationTimer: 0,
+
+            headbobTimer: 0,
+            baseCameraY: 1.6,
+
+            // Abilities & Cooldowns
+            batCooldown: 0,
+            batMaxCD: 20,
+            tickleCooldown: 0,
+            tickleMaxCD: 15,
+            pushCooldown: 0,
+            pushMaxCD: 5,
+
+            enochStunnedTimer: 0,
+            enochKnockedTimer: 0,
+            invincibleTimer: 0,
+            shaveMode: false
+        };
+
+        // Setup HUD Item Buttons
+        if (SAVE.upgrades.bat) document.getElementById('bat-btn').style.display = 'block';
+        if (SAVE.upgrades.shaver) document.getElementById('shave-btn').style.display = 'block';
+        if (SAVE.upgrades.tickle) document.getElementById('tickle-btn').style.display = 'block';
+        if (SAVE.upgrades.push) document.getElementById('push-btn').style.display = 'block';
+
+        document.getElementById('coin-hud').innerText = `🪙 COINS: ${SAVE.coins}`;
+
+        const screenFader = document.getElementById('screen-fader');
+        const warningModal = document.getElementById('warning-modal');
+        const startModal = document.getElementById('start-modal');
+        let warningTimer = null;
+        let warningHandled = false;
+
+        function startWarningSequence() {
+            setTimeout(() => { screenFader.style.opacity = '0'; }, 200);
+            warningTimer = setTimeout(() => { transitionWarningToMenu(); }, 3200);
+        }
+
+        function transitionWarningToMenu() {
+            if (warningHandled) return;
+            warningHandled = true;
+            if (warningTimer) clearTimeout(warningTimer);
+            screenFader.style.opacity = '1';
+            setTimeout(() => {
+                warningModal.style.display = 'none';
+                startModal.style.display = 'flex';
+                setTimeout(() => { screenFader.style.opacity = '0'; }, 100);
+            }, 800);
+        }
+
+        document.getElementById('skip-warning-btn').addEventListener('click', () => {
+            if (warningHandled) return;
+            warningHandled = true;
+            if (warningTimer) clearTimeout(warningTimer);
+            warningModal.style.display = 'none';
+            startModal.style.display = 'flex';
+            screenFader.style.opacity = '0';
+        });
+
+        window.addEventListener('load', startWarningSequence);
+
+        const COLOR_PALETTE = [
+            '#ff3333', '#3388ff', '#00ffcc', '#ffcc00', '#ff00cc',
+            '#9933ff', '#ff8800', '#00ff66', '#ff6699', '#00ffff',
+            '#ffff33', '#aaff00', '#ff0066', '#e6005c'
+        ];
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x030509);
+        scene.fog = new THREE.FogExp2(0x030509, 0.012);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 350);
+        camera.position.set(0, GAME.baseCameraY, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x222a40, 0.45);
+        scene.add(ambientLight);
+
+        const flashlightDist = SAVE.upgrades.extra2 ? 160 : 90;
+        const flashlightAngle = SAVE.upgrades.extra2 ? Math.PI / 3 : Math.PI / 4.5;
+        const flashlight = new THREE.SpotLight(0xfff8ee, SAVE.upgrades.extra2 ? 9.0 : 6.0, flashlightDist, flashlightAngle, 0.3, 0.8);
+        flashlight.position.set(0, 0, 0);
+        flashlight.castShadow = true;
+        flashlight.shadow.mapSize.width = 1024;
+        flashlight.shadow.mapSize.height = 1024;
+        flashlight.shadow.camera.near = 0.5;
+        flashlight.shadow.camera.far = flashlightDist;
+
+        const flashlightTarget = new THREE.Object3D();
+        flashlightTarget.position.set(0, 0, -10);
+        camera.add(flashlightTarget);
+        flashlight.target = flashlightTarget;
+        camera.add(flashlight);
+        scene.add(camera);
+
+        function createJerseyTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 512, 512);
+
+            ctx.fillStyle = '#cc0000';
+            ctx.fillRect(0, 0, 512, 20);
+            ctx.fillRect(0, 240, 512, 30);
+            ctx.fillRect(0, 492, 512, 20);
+
+            ctx.fillStyle = '#cc0000';
+            ctx.font = 'bold 52px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('OWEGO', 256, 90);
+
+            ctx.font = 'bold 110px Arial';
+            ctx.fillText('15', 256, 200);
+
+            ctx.font = 'bold 180px Arial';
+            ctx.fillText('15', 256, 430);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            return texture;
+        }
+
+        function createWallTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1c222a';
+            ctx.fillRect(0, 0, 256, 256);
+
+            ctx.strokeStyle = '#10141a';
+            ctx.lineWidth = 4;
+
+            for (let y = 0; y < 256; y += 32) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(256, y);
+                ctx.stroke();
+
+                const offset = (y / 32) % 2 === 0 ? 0 : 32;
+                for (let x = offset; x < 256; x += 64) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x, y + 32);
+                    ctx.stroke();
+                }
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            return texture;
+        }
+
+        const wallTexture = createWallTexture();
+        wallTexture.repeat.set(6, 1);
+
+        const obstacleBoxes = [];
+        const wallMaterial = new THREE.MeshStandardMaterial({
+            map: wallTexture,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x11161d,
+            roughness: 0.9,
+            metalness: 0.1
+        });
+
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(GAME.mapSize, GAME.mapSize), floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        function createWall(x, z, w, d) {
+            const wallGeo = new THREE.BoxGeometry(w, GAME.wallHeight, d);
+            const wall = new THREE.Mesh(wallGeo, wallMaterial);
+            wall.position.set(x, GAME.wallHeight / 2, z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+
+            wall.geometry.computeBoundingBox();
+            obstacleBoxes.push(new THREE.Box3().setFromObject(wall));
+            return wall;
+        }
+
+        const halfSize = GAME.mapSize / 2;
+        createWall(0, -halfSize, GAME.mapSize, 2);
+        createWall(0, halfSize, GAME.mapSize, 2);
+        createWall(-halfSize, 0, 2, GAME.mapSize);
+        createWall(halfSize, 0, 2, GAME.mapSize);
+
+        const baseMazeCoords = [
+            {x: -36, z: -36, w: 48, d: 4}, {x: 36, z: -36, w: 48, d: 4},
+            {x: -36, z: 36, w: 48, d: 4},  {x: 36, z: 36, w: 48, d: 4},
+            {x: -60, z: 0, w: 4, d: 48},   {x: 60, z: 0, w: 4, d: 48},
+            {x: -96, z: -96, w: 60, d: 4}, {x: -96, z: -54, w: 4, d: 54},
+            {x: -54, z: -114, w: 4, d: 42},{x: 96, z: -96, w: 60, d: 4},
+            {x: 96, z: -54, w: 4, d: 54},  {x: 54, z: -114, w: 4, d: 42},
+            {x: -96, z: 96, w: 60, d: 4},  {x: -96, z: 54, w: 4, d: 54},
+            {x: -54, z: 114, w: 4, d: 42}, {x: 96, z: 96, w: 60, d: 4},
+            {x: 96, z: 54, w: 4, d: 54},   {x: 54, z: 114, w: 4, d: 42},
+            {x: 0, z: -90, w: 4, d: 50},   {x: 0, z: 90, w: 4, d: 50},
+            {x: -90, z: 0, w: 50, d: 4},   {x: 90, z: 0, w: 50, d: 4}
+        ];
+
+        baseMazeCoords.forEach(m => createWall(m.x, m.z, m.w, m.d));
+
+        function buildTerminalModel() {
+            const termGroup = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5, metalness: 0.5 });
+            const screenMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
+            const bezelMat = new THREE.MeshStandardMaterial({ color: 0x00ffcc, roughness: 0.3 });
+
+            const stand = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.5, 0.6), bodyMat);
+            stand.position.y = 0.75;
+            stand.castShadow = true;
+            termGroup.add(stand);
+
+            const consoleBox = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 1.2), bodyMat);
+            consoleBox.position.set(0, 1.8, 0);
+            consoleBox.rotation.x = -Math.PI / 12;
+            consoleBox.castShadow = true;
+            termGroup.add(consoleBox);
+
+            const display = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 0.05), screenMat);
+            display.position.set(0, 1.95, -0.42);
+            display.rotation.x = -Math.PI / 12;
+            termGroup.add(display);
+
+            const bezel = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.7, 0.02), bezelMat);
+            bezel.position.set(0, 1.95, -0.44);
+            bezel.rotation.x = -Math.PI / 12;
+            termGroup.add(bezel);
+
+            return termGroup;
+        }
+
+        function buildGeneratorModel() {
+            const genGroup = new THREE.Group();
+            const darkBodyMat = new THREE.MeshStandardMaterial({ color: 0x1b2028, roughness: 0.6, metalness: 0.4 });
+            const redTopMat = new THREE.MeshStandardMaterial({ color: 0x8b2222, roughness: 0.5 });
+            const controlPanelMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.4 });
+            const displayMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.1 });
+            const redSwitchMat = new THREE.MeshStandardMaterial({ color: 0xff1111, roughness: 0.2 });
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+            const wheelRimMat = new THREE.MeshStandardMaterial({ color: 0x778899, metalness: 0.7 });
+
+            const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.4, 1.4), darkBodyMat);
+            mainBody.position.y = 1.0;
+            mainBody.castShadow = true;
+            mainBody.receiveShadow = true;
+            genGroup.add(mainBody);
+
+            const topPlate = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.25, 1.42), redTopMat);
+            topPlate.position.y = 1.75;
+            topPlate.castShadow = true;
+            genGroup.add(topPlate);
+
+            const controlPanel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.4, 0.05), controlPanelMat);
+            controlPanel.position.set(0, 1.45, 0.71);
+            genGroup.add(controlPanel);
+
+            const screen = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 0.06), displayMat);
+            screen.position.set(0.2, 1.45, 0.72);
+            genGroup.add(screen);
+
+            const switchBtn = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.08), redSwitchMat);
+            switchBtn.position.set(-0.85, 1.45, 0.73);
+            genGroup.add(switchBtn);
+
+            const wheelTire = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.18, 20), tireMat);
+            wheelTire.rotation.z = Math.PI / 2;
+            wheelTire.position.set(1.42, 0.42, 0.75);
+            wheelTire.castShadow = true;
+            genGroup.add(wheelTire);
+
+            const wheelRim = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16), wheelRimMat);
+            wheelRim.rotation.z = Math.PI / 2;
+            wheelRim.position.set(1.43, 0.42, 0.75);
+            genGroup.add(wheelRim);
+
+            return genGroup;
+        }
+
+        const taskStations = [];
+        const taskDefinitions = [
+            { name: 'Decrypt Security Codes', isGenerator: false },
+            { name: 'Align Frequency Relays', isGenerator: false },
+            { name: 'Bypass Firewall Matrix', isGenerator: false },
+            { name: 'Calibrate Navigation Beacon', isGenerator: false },
+            { name: 'Override Mainframe Lock', isGenerator: false },
+            { name: 'Reboot Oxygen Controls', isGenerator: false },
+            { name: 'Purge Containment Vault', isGenerator: false },
+            { name: 'Sync Satellite Uplink', isGenerator: false },
+            { name: 'Decontaminate Air Filters', isGenerator: false },
+            { name: 'Restart Main Power Generators', isGenerator: true, isGroupGen: true }
+        ];
+
+        const stationLocations = [
+            { x: -110, z: -110, defIndex: 0 },
+            { x: 110, z: -110, defIndex: 1 },
+            { x: -110, z: 110, defIndex: 2 },
+            { x: 110, z: 110, defIndex: 3 },
+            { x: 0, z: -110, defIndex: 4 },
+            { x: 0, z: 110, defIndex: 5 },
+            { x: -110, z: 0, defIndex: 6 },
+            { x: 110, z: 0, defIndex: 7 },
+            { x: -50, z: -50, defIndex: 8 },
+            { x: -70, z: -70, defIndex: 9, isGenNode: true },
+            { x: 70, z: -70, defIndex: 9, isGenNode: true },
+            { x: -70, z: 70, defIndex: 9, isGenNode: true },
+            { x: 70, z: 70, defIndex: 9, isGenNode: true }
+        ];
+
+        const generatorTaskState = {
+            id: 10,
+            name: 'Restart Main Power Generators',
+            currentLayer: 0,
+            totalLayers: 5,
+            completed: false,
+            indicators: [],
+            pointLights: []
+        };
+
+        stationLocations.forEach((loc) => {
+            const def = taskDefinitions[loc.defIndex];
+            let model;
+
+            const lightGeo = new THREE.SphereGeometry(0.2, 16, 16);
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+            const indicator = new THREE.Mesh(lightGeo, lightMat);
+            indicator.position.set(0, def.isGenNode ? 2.1 : 2.4, 0);
+
+            const pointLight = new THREE.PointLight(0xff3333, 1.2, 10);
+            pointLight.position.set(0, def.isGenNode ? 2.3 : 2.5, 0);
+
+            if (def.isGenNode) {
+                model = buildGeneratorModel();
+                model.position.set(loc.x, 0, loc.z);
+                model.add(indicator);
+                model.add(pointLight);
+                
+                generatorTaskState.indicators.push(indicator);
+                generatorTaskState.pointLights.push(pointLight);
+            } else {
+                model = buildTerminalModel();
+                model.position.set(loc.x, 0, loc.z);
+                model.add(indicator);
+                model.add(pointLight);
+            }
+
+            scene.add(model);
+
+            const boxMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(2.5, 2.5, 2.5),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            boxMesh.position.set(loc.x, 1.25, loc.z);
+            scene.add(boxMesh);
+
+            boxMesh.geometry.computeBoundingBox();
+            obstacleBoxes.push(new THREE.Box3().setFromObject(boxMesh));
+
+            if (def.isGenNode) {
+                taskStations.push({
+                    id: 10,
+                    name: def.name,
+                    isGeneratorGroup: true,
+                    groupState: generatorTaskState,
+                    completed: false,
+                    pos: new THREE.Vector3(loc.x, 0, loc.z)
+                });
+            } else {
+                taskStations.push({
+                    id: loc.defIndex + 1,
+                    name: def.name,
+                    isGeneratorGroup: false,
+                    currentLayer: 0,
+                    totalLayers: 5,
+                    completed: false,
+                    indicator: indicator,
+                    pointLight: pointLight,
+                    pos: new THREE.Vector3(loc.x, 0, loc.z)
+                });
+            }
+        });
+
+        const taskItemsContainer = document.getElementById('task-items-container');
+        function initTaskListUI() {
+            taskItemsContainer.innerHTML = '';
+            taskDefinitions.forEach((def, idx) => {
+                const taskId = idx + 1;
+                const item = document.createElement('div');
+                item.className = 'task-item';
+                item.id = `task-ui-item-${taskId}`;
+                item.innerHTML = `<span>${def.name}</span> <span class="task-status-tag">PENDING</span>`;
+                taskItemsContainer.appendChild(item);
+            });
+        }
+        initTaskListUI();
+
+        const taskToggleBtn = document.getElementById('task-toggle-btn');
+        const taskListPanel = document.getElementById('task-list-panel');
+        taskToggleBtn.addEventListener('click', () => {
+            taskListPanel.style.display = (taskListPanel.style.display === 'block') ? 'none' : 'block';
+        });
+
+        const exitGroup = new THREE.Group();
+        exitGroup.position.set(0, 0, -135);
+        exitGroup.visible = false;
+
+        const portalGeo = new THREE.TorusGeometry(3, 0.3, 16, 32);
+        const portalMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const portalMesh = new THREE.Mesh(portalGeo, portalMat);
+        portalMesh.position.y = 3;
+        exitGroup.add(portalMesh);
+
+        const exitLight = new THREE.PointLight(0x00ffff, 3, 20);
+        exitLight.position.y = 3;
+        exitGroup.add(exitLight);
+        scene.add(exitGroup);
+
+        // Enoch Mesh & Hair Setup
+        const enochGroup = new THREE.Group();
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+        const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.3, 0.35), legMat);
+        leftLeg.position.set(-0.25, 0.65, 0);
+        leftLeg.castShadow = true;
+        enochGroup.add(leftLeg);
+
+        const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.3, 0.35), legMat);
+        rightLeg.position.set(0.25, 0.65, 0);
+        rightLeg.castShadow = true;
+        enochGroup.add(rightLeg);
+
+        const jerseyTex = createJerseyTexture();
+        const jerseyMat = [
+            new THREE.MeshStandardMaterial({ color: 0xffffff }),
+            new THREE.MeshStandardMaterial({ color: 0xffffff }),
+            new THREE.MeshStandardMaterial({ color: 0xffffff }),
+            new THREE.MeshStandardMaterial({ color: 0xffffff }),
+            new THREE.MeshStandardMaterial({ map: jerseyTex }),
+            new THREE.MeshStandardMaterial({ map: jerseyTex })
+        ];
+
+        const torsoGeo = new THREE.BoxGeometry(0.9, 1.3, 0.5);
+        const torso = new THREE.Mesh(torsoGeo, jerseyMat);
+        torso.position.set(0, 1.95, 0);
+        torso.castShadow = true;
+        enochGroup.add(torso);
+
+        const armGeo = new THREE.BoxGeometry(0.3, 1.1, 0.3);
+        const armMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const leftArm = new THREE.Mesh(armGeo, armMat);
+        leftArm.position.set(-0.62, 1.95, 0);
+        enochGroup.add(leftArm);
+
+        const rightArm = new THREE.Mesh(armGeo, armMat);
+        rightArm.position.set(0.62, 1.95, 0);
+        enochGroup.add(rightArm);
+
+        const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd2a379 });
+        const head = new THREE.Mesh(headGeo, skinMat);
+        head.position.set(0, 2.8, 0);
+        enochGroup.add(head);
+
+        const redGlowEyeMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.8 });
+        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), redGlowEyeMat);
+        leftEye.position.set(-0.15, 2.85, -0.31);
+        const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), redGlowEyeMat);
+        rightEye.position.set(0.15, 2.85, -0.31);
+        enochGroup.add(leftEye);
+        enochGroup.add(rightEye);
+
+        const buzzHairMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 1.0 });
+        const hairMesh = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.62), buzzHairMat);
+        hairMesh.position.set(0, 3.12, 0);
+        enochGroup.add(hairMesh);
+
+        enochGroup.position.set(-130, 0, -130);
+        scene.add(enochGroup);
+
+        const enochAI = {
+            state: 'wander',
+            targetDestination: new THREE.Vector3(130, 0, 130),
+            gridWaypoints: [
+                new THREE.Vector3(-120, 0, -120), new THREE.Vector3(120, 0, -120),
+                new THREE.Vector3(-120, 0, 120), new THREE.Vector3(120, 0, 120),
+                new THREE.Vector3(-80, 0, -80), new THREE.Vector3(80, 0, 80),
+                new THREE.Vector3(0, 0, -110), new THREE.Vector3(0, 0, 110),
+                new THREE.Vector3(-110, 0, 0), new THREE.Vector3(110, 0, 0)
+            ]
+        };
+
+        function getSmartWanderTarget() {
+            const index = Math.floor(Math.random() * enochAI.gridWaypoints.length);
+            return enochAI.gridWaypoints[index].clone();
+        }
+
+        function checkCollisionAtPosition(pos, radius) {
+            const testBox = new THREE.Box3(
+                new THREE.Vector3(pos.x - radius, 0, pos.z - radius),
+                new THREE.Vector3(pos.x + radius, 2, pos.z + radius)
+            );
+            for (let i = 0; i < obstacleBoxes.length; i++) {
+                if (testBox.intersectsBox(obstacleBoxes[i])) return true;
+            }
+            return false;
+        }
+
+        const keys = {};
+        let pitch = 0, yaw = 0;
+        const joystick = { active: false, touchId: null, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+        const lookTouch = { active: false, touchId: null, lastX: 0, lastY: 0 };
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') toggleSprint(true);
+            if ((e.code === 'KeyE' || e.code === 'Space') && GAME.activeTaskStation && !GAME.inPuzzle) openPuzzleModal();
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') toggleSprint(false);
+        });
+
+        window.addEventListener('click', () => {
+            if (GAME.started && !GAME.ended && !GAME.inPuzzle && document.pointerLockElement !== document.body && !isTouchDevice()) {
+                document.body.requestPointerLock();
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body && !GAME.inPuzzle && !GAME.shaveMode) {
+                yaw -= e.movementX * 0.0025;
+                pitch -= e.movementY * 0.0025;
+                pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
+            }
+        });
+
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        }
+
+        const joyZone = document.getElementById('joystick-zone');
+        const joyKnob = document.getElementById('joystick-knob');
+        const repairBtn = document.getElementById('repair-btn');
+        const sprintBtn = document.getElementById('sprint-btn');
+
+        function toggleSprint(forceState) {
+            GAME.sprinting = (typeof forceState === 'boolean') ? forceState : !GAME.sprinting;
+            if (GAME.sprinting) sprintBtn.classList.add('active');
+            else sprintBtn.classList.remove('active');
+        }
+
+        sprintBtn.addEventListener('touchstart', (e) => { e.preventDefault(); toggleSprint(); });
+
+        joyZone.addEventListener('touchstart', (e) => {
+            if (GAME.inPuzzle) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (!joystick.active) {
+                    joystick.active = true;
+                    joystick.touchId = t.identifier;
+                    const rect = joyZone.getBoundingClientRect();
+                    joystick.startX = rect.left + rect.width / 2;
+                    joystick.startY = rect.top + rect.height / 2;
+                    updateJoystick(t.clientX, t.clientY);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.shop-grid') || e.target.closest('#task-list-panel')) {
+                return;
+            }
+            if (GAME.inPuzzle) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (joystick.active && t.identifier === joystick.touchId) {
+                    updateJoystick(t.clientX, t.clientY);
+                } else if (lookTouch.active && t.identifier === lookTouch.touchId && !GAME.shaveMode) {
+                    const dx = t.clientX - lookTouch.lastX;
+                    const dy = t.clientY - lookTouch.lastY;
+                    yaw -= dx * 0.006;
+                    pitch -= dy * 0.006;
+                    pitch = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch));
+                    lookTouch.lastX = t.clientX;
+                    lookTouch.lastY = t.clientY;
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                if (joystick.active && t.identifier === joystick.touchId) {
+                    joystick.active = false;
+                    joystick.moveX = 0;
+                    joystick.moveY = 0;
+                    joyKnob.style.transform = 'translate(0px, 0px)';
+                }
+                if (lookTouch.active && t.identifier === lookTouch.touchId) lookTouch.active = false;
+            }
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.shop-grid') || e.target.closest('#task-list-panel')) return;
+            if (GAME.inPuzzle) return;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                const target = t.target;
+                if (!lookTouch.active && target !== joyZone && target !== joyKnob && target !== repairBtn && target !== sprintBtn && !joyZone.contains(target) && target !== taskToggleBtn && !taskListPanel.contains(target)) {
+                    lookTouch.active = true;
+                    lookTouch.touchId = t.identifier;
+                    lookTouch.lastX = t.clientX;
+                    lookTouch.lastY = t.clientY;
+                }
+            }
+        });
+
+        function updateJoystick(clientX, clientY) {
+            const dx = clientX - joystick.startX;
+            const dy = clientY - joystick.startY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 45;
+            const angle = Math.atan2(dy, dx);
+            const clampedDist = Math.min(dist, maxDist);
+            joyKnob.style.transform = `translate(${Math.cos(angle) * clampedDist}px, ${Math.sin(angle) * clampedDist}px)`;
+            joystick.moveX = (Math.cos(angle) * clampedDist) / maxDist;
+            joystick.moveY = (Math.sin(angle) * clampedDist) / maxDist;
+        }
+
+        repairBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (GAME.activeTaskStation && !GAME.inPuzzle) openPuzzleModal();
+        });
+
+        // Item Ability Handlers
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        if (SAVE.upgrades.bat) {
+            document.getElementById('bat-btn').addEventListener('click', () => {
+                if (GAME.batCooldown > 0 || !GAME.started || GAME.ended) return;
+                GAME.batCooldown = GAME.batMaxCD;
+                const playerPos = new THREE.Vector3(camera.position.x, 0, camera.position.z);
+                const enochPos = new THREE.Vector3(enochGroup.position.x, 0, enochGroup.position.z);
+                if (playerPos.distanceTo(enochPos) < 6.0) {
+                    GAME.enochStunnedTimer = 3.0;
+                }
+            });
+        }
+
+        if (SAVE.upgrades.shaver) {
+            const shaveBtn = document.getElementById('shave-btn');
+            shaveBtn.addEventListener('click', () => {
+                if (!GAME.started || GAME.ended) return;
+                GAME.shaveMode = !GAME.shaveMode;
+                if (GAME.shaveMode) shaveBtn.classList.add('active-mode');
+                else shaveBtn.classList.remove('active-mode');
+            });
+
+            window.addEventListener('pointerdown', (e) => {
+                if (!GAME.shaveMode || !GAME.started || GAME.ended) return;
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(hairMesh);
+                if (intersects.length > 0) {
+                    hairMesh.scale.y = Math.max(0.05, hairMesh.scale.y - 0.25);
+                    hairMesh.position.y -= 0.03;
+                }
+            });
+        }
+
+        if (SAVE.upgrades.tickle) {
+            document.getElementById('tickle-btn').addEventListener('click', () => {
+                if (GAME.tickleCooldown > 0 || !GAME.started || GAME.ended) return;
+                GAME.tickleCooldown = GAME.tickleMaxCD;
+                const playerPos = new THREE.Vector3(camera.position.x, 0, camera.position.z);
+                const enochPos = new THREE.Vector3(enochGroup.position.x, 0, enochGroup.position.z);
+                if (playerPos.distanceTo(enochPos) < 5.0) {
+                    GAME.invincibleTimer = 2.0;
+                }
+            });
+        }
+
+        if (SAVE.upgrades.push) {
+            document.getElementById('push-btn').addEventListener('click', () => {
+                if (GAME.pushCooldown > 0 || !GAME.started || GAME.ended) return;
+                GAME.pushCooldown = GAME.pushMaxCD;
+                const playerPos = new THREE.Vector3(camera.position.x, 0, camera.position.z);
+                const enochPos = new THREE.Vector3(enochGroup.position.x, 0, enochGroup.position.z);
+                if (playerPos.distanceTo(enochPos) < 6.5) {
+                    const pushDir = new THREE.Vector3().subVectors(enochPos, playerPos).normalize();
+                    enochGroup.position.addScaledVector(pushDir, 5.0);
+                    GAME.enochKnockedTimer = 1.0;
+                }
+            });
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            document.getElementById('start-modal').style.display = 'none';
+            GAME.started = true;
+            if (!isTouchDevice()) document.body.requestPointerLock();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const puzzleModal = document.getElementById('puzzle-modal');
+        const puzzleBoard = document.getElementById('puzzle-board');
+        const puzzleSvg = document.getElementById('puzzle-svg');
+        let pNodes = [];
+        let activeWire = null;
+        let completedPairs = new Set();
+        let targetPairsCount = 5;
+        let completedWirePaths = [];
+
+        document.getElementById('btn-exit-puzzle').addEventListener('click', closePuzzleModal);
+        document.getElementById('btn-refresh-layer').addEventListener('click', generateActivePuzzleGrid);
+
+        function openPuzzleModal() {
+            if (!GAME.activeTaskStation) return;
+            const isDone = GAME.activeTaskStation.isGeneratorGroup ? GAME.activeTaskStation.groupState.completed : GAME.activeTaskStation.completed;
+            if (isDone) return;
+            GAME.inPuzzle = true;
+            if (document.exitPointerLock) document.exitPointerLock();
+            puzzleModal.style.display = 'flex';
+            updateLayerTrackerUI();
+            generateActivePuzzleGrid();
+        }
+
+        function closePuzzleModal() {
+            GAME.inPuzzle = false;
+            puzzleModal.style.display = 'none';
+            if (GAME.started && !GAME.ended && !isTouchDevice()) document.body.requestPointerLock();
+        }
+
+        function updateLayerTrackerUI() {
+            const station = GAME.activeTaskStation;
+            if (!station) return;
+            const currentLayer = station.isGeneratorGroup ? station.groupState.currentLayer : station.currentLayer;
+            const totalLayers = station.isGeneratorGroup ? station.groupState.totalLayers : station.totalLayers;
+            document.getElementById('puzzle-gen-title').innerText = `${station.name.toUpperCase()} (${currentLayer + 1}/${totalLayers})`;
+            
+            const trackerContainer = document.querySelector('.layer-tracker');
+            trackerContainer.innerHTML = '';
+            for (let i = 0; i < totalLayers; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'layer-dot';
+                if (i < currentLayer) dot.classList.add('done');
+                else if (i === currentLayer) dot.classList.add('active');
+                trackerContainer.appendChild(dot);
+            }
+        }
+
+        function generateActivePuzzleGrid() {
+            const station = GAME.activeTaskStation;
+            if (!station) return;
+            const isGen = station.isGeneratorGroup;
+            const gridSize = isGen ? 10 : 8;
+
+            puzzleBoard.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            puzzleBoard.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+            const desiredPairs = isGen ? (Math.floor(Math.random() * 5) + 7) : (Math.floor(Math.random() * 5) + 4);
+
+            let gridState = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+            let nodes = [];
+            let currentPairId = 1;
+
+            while (currentPairId <= desiredPairs) {
+                let available = [];
+                for (let r = 0; r < gridSize; r++) {
+                    for (let c = 0; c < gridSize; c++) {
+                        if (!gridState[r][c]) available.push({r, c});
+                    }
+                }
+                if (available.length < 2) break;
+
+                let start = available[Math.floor(Math.random() * available.length)];
+                let path = [start];
+                let cur = start;
+                let pathLen = Math.floor(Math.random() * 4) + 2;
+
+                for (let step = 0; step < pathLen; step++) {
+                    let nbrs = [
+                        {r: cur.r - 1, c: cur.c}, {r: cur.r + 1, c: cur.c},
+                        {r: cur.r, c: cur.c - 1}, {r: cur.r, c: cur.c + 1}
+                    ].filter(n => n.r >= 0 && n.r < gridSize && n.c >= 0 && n.c < gridSize && !gridState[n.r][n.c]);
+
+                    if (nbrs.length === 0) break;
+                    let nxt = nbrs[Math.floor(Math.random() * nbrs.length)];
+                    path.push(nxt);
+                    cur = nxt;
+                }
+
+                if (path.length >= 2) {
+                    let end = path[path.length - 1];
+                    path.forEach(pt => { gridState[pt.r][pt.c] = currentPairId; });
+                    nodes.push({ pairId: currentPairId, r: start.r, c: start.c });
+                    nodes.push({ pairId: currentPairId, r: end.r, c: end.c });
+                    currentPairId++;
+                }
+            }
+
+            pNodes = nodes;
+            targetPairsCount = currentPairId - 1;
+            completedPairs.clear();
+            completedWirePaths = [];
+            activeWire = null;
+            renderPuzzleBoard(gridSize);
+        }
+
+        function renderPuzzleBoard(gridSize) {
+            puzzleBoard.innerHTML = '';
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'puzzle-cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+
+                    const nodeMatch = pNodes.find(n => n.r === r && n.c === c);
+                    if (nodeMatch) {
+                        const node = document.createElement('div');
+                        node.className = 'wire-node';
+                        node.innerText = nodeMatch.pairId;
+                        node.style.backgroundColor = COLOR_PALETTE[(nodeMatch.pairId - 1) % COLOR_PALETTE.length];
+                        if (completedPairs.has(nodeMatch.pairId)) node.classList.add('connected');
+                        cell.appendChild(node);
+                    }
+
+                    cell.addEventListener('pointerdown', () => onCellPointerDown(r, c, gridSize));
+                    cell.addEventListener('pointerenter', (e) => { if (e.buttons === 1) onCellPointerEnter(r, c, gridSize); });
+                    puzzleBoard.appendChild(cell);
+                }
+            }
+            renderSvgWires(gridSize);
+        }
+
+        function renderSvgWires(gridSize) {
+            puzzleSvg.innerHTML = '';
+            completedWirePaths.forEach(item => drawSvgPath(item.path, item.pairId, gridSize));
+            if (activeWire && activeWire.path.length >= 2) drawSvgPath(activeWire.path, activeWire.pairId, gridSize);
+        }
+
+        function drawSvgPath(path, pairId, gridSize) {
+            if (!path || path.length < 2) return;
+            const gridCells = puzzleBoard.children;
+            if (gridCells.length < gridSize * gridSize) return;
+
+            let d = '';
+            const boardRect = puzzleBoard.getBoundingClientRect();
+            path.forEach((pt, idx) => {
+                const cell = gridCells[pt.r * gridSize + pt.c];
+                if (!cell) return;
+                const rect = cell.getBoundingClientRect();
+                const x = (rect.left + rect.width / 2) - boardRect.left;
+                const y = (rect.top + rect.height / 2) - boardRect.top;
+                d += (idx === 0) ? `M ${x} ${y}` : ` L ${x} ${y}`;
+            });
+
+            const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            pathEl.setAttribute('d', d);
+            pathEl.setAttribute('stroke', COLOR_PALETTE[(pairId - 1) % COLOR_PALETTE.length]);
+            pathEl.setAttribute('stroke-width', '5');
+            pathEl.setAttribute('stroke-linecap', 'round');
+            pathEl.setAttribute('stroke-linejoin', 'round');
+            pathEl.setAttribute('fill', 'none');
+            puzzleSvg.appendChild(pathEl);
+        }
+
+        function onCellPointerDown(r, c, gridSize) {
+            const isNode = pNodes.find(n => n.r === r && n.c === c);
+            if (isNode) {
+                resetWireForPair(isNode.pairId, gridSize);
+                const neighborPartner = getAdjacentPartnerNode(r, c, isNode.pairId, gridSize);
+                if (neighborPartner) {
+                    completedPairs.add(isNode.pairId);
+                    completedWirePaths.push({ pairId: isNode.pairId, path: [{ r, c }, neighborPartner] });
+                    renderPuzzleBoard(gridSize);
+                    checkPuzzleCompletion(gridSize);
+                    return;
+                }
+                activeWire = { pairId: isNode.pairId, startNode: isNode, path: [{ r, c }] };
+            } else {
+                const wireToReset = completedWirePaths.find(w => w.path.some(pt => pt.r === r && pt.c === c));
+                if (wireToReset) resetWireForPair(wireToReset.pairId, gridSize);
+            }
+        }
+
+        function getAdjacentPartnerNode(r, c, pairId, gridSize) {
+            const neighbors = [{r: r - 1, c}, {r: r + 1, c}, {r, c: c - 1}, {r, c: c + 1}];
+            for (let n of neighbors) {
+                if (n.r >= 0 && n.r < gridSize && n.c >= 0 && n.c < gridSize) {
+                    const targetNode = pNodes.find(node => node.r === n.r && node.c === n.c);
+                    if (targetNode && targetNode.pairId === pairId) return n;
+                }
+            }
+            return null;
+        }
+
+        function onCellPointerEnter(r, c, gridSize) {
+            if (!activeWire) return;
+            const path = activeWire.path;
+            const last = path[path.length - 1];
+            if (Math.abs(last.r - r) + Math.abs(last.c - c) !== 1) return;
+
+            if (path.length > 1 && path[path.length - 2].r === r && path[path.length - 2].c === c) {
+                path.pop();
+                renderPuzzleBoard(gridSize);
+                return;
+            }
+
+            const targetNode = pNodes.find(n => n.r === r && n.c === c);
+            if (targetNode && targetNode.r === activeWire.startNode.r && targetNode.c === activeWire.startNode.c) return;
+            if (targetNode && targetNode.pairId !== activeWire.pairId) return;
+            if (completedWirePaths.some(w => w.pairId !== activeWire.pairId && w.path.some(pt => pt.r === r && pt.c === c))) return;
+
+            if (targetNode && targetNode.pairId === activeWire.pairId) {
+                path.push({ r, c });
+                completedPairs.add(activeWire.pairId);
+                completedWirePaths.push({ pairId: activeWire.pairId, path: [...path] });
+                activeWire = null;
+                renderPuzzleBoard(gridSize);
+                checkPuzzleCompletion(gridSize);
+            } else if (!targetNode) {
+                path.push({ r, c });
+                renderPuzzleBoard(gridSize);
+            }
+        }
+
+        function resetWireForPair(pairId, gridSize) {
+            completedPairs.delete(pairId);
+            completedWirePaths = completedWirePaths.filter(w => w.pairId !== pairId);
+            renderPuzzleBoard(gridSize);
+        }
+
+        function checkPuzzleCompletion(gridSize) {
+            if (completedPairs.size >= targetPairsCount) {
+                setTimeout(() => {
+                    const station = GAME.activeTaskStation;
+                    if (!station) return;
+                    if (station.isGeneratorGroup) {
+                        station.groupState.currentLayer++;
+                        updateLayerTrackerUI();
+                        if (station.groupState.currentLayer >= station.groupState.totalLayers) {
+                            station.groupState.completed = true;
+                            taskStations.forEach(s => { if (s.isGeneratorGroup) s.completed = true; });
+                            station.groupState.indicators.forEach(ind => ind.material.color.setHex(0x00ff00));
+                            station.groupState.pointLights.forEach(pl => pl.color.setHex(0x00ff00));
+                            completeTaskItem(station.id);
+                        } else { generateActivePuzzleGrid(); }
+                    } else {
+                        station.currentLayer++;
+                        updateLayerTrackerUI();
+                        if (station.currentLayer >= station.totalLayers) {
+                            station.completed = true;
+                            station.indicator.material.color.setHex(0x00ff00);
+                            station.pointLight.color.setHex(0x00ff00);
+                            completeTaskItem(station.id);
+                        } else { generateActivePuzzleGrid(); }
+                    }
+                }, 300);
+            }
+        }
+
+        function completeTaskItem(taskId) {
+            const uiItem = document.getElementById(`task-ui-item-${taskId}`);
+            if (uiItem && !uiItem.classList.contains('done')) {
+                uiItem.classList.add('done');
+                uiItem.querySelector('.task-status-tag').innerText = 'COMPLETE';
+                GAME.tasksCompleted++;
+                document.getElementById('task-status').innerText = `TASKS COMPLETED: ${GAME.tasksCompleted} / ${GAME.tasksRequired}`;
+            }
+
+            if (GAME.tasksCompleted >= GAME.tasksRequired) {
+                exitGroup.visible = true;
+                const obj = document.getElementById('obj-status');
+                obj.innerText = 'PORTAL REVEALED! ESCAPE NOW!';
+                obj.style.color = '#00ffcc';
+            }
+            closePuzzleModal();
+        }
+
+        const clock = new THREE.Clock();
+        const playerRadius = 0.6;
+        const enochRadius = 0.65;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = Math.min(clock.getDelta(), 0.1);
+
+            // Update Cooldown Timers & Red Border Drop UI
+            if (GAME.batCooldown > 0) {
+                GAME.batCooldown = Math.max(0, GAME.batCooldown - delta);
+                document.getElementById('cd-bat').style.transform = `scaleY(${GAME.batCooldown / GAME.batMaxCD})`;
+            }
+            if (GAME.tickleCooldown > 0) {
+                GAME.tickleCooldown = Math.max(0, GAME.tickleCooldown - delta);
+                document.getElementById('cd-tickle').style.transform = `scaleY(${GAME.tickleCooldown / GAME.tickleMaxCD})`;
+            }
+            if (GAME.pushCooldown > 0) {
+                GAME.pushCooldown = Math.max(0, GAME.pushCooldown - delta);
+                document.getElementById('cd-push').style.transform = `scaleY(${GAME.pushCooldown / GAME.pushMaxCD})`;
+            }
+            if (GAME.invincibleTimer > 0) GAME.invincibleTimer -= delta;
+
+            if (GAME.started && !GAME.ended) {
+                let isMoving = false;
+                let activeSpeed = GAME.walkSpeed;
+
+                if (!GAME.inPuzzle && !GAME.shaveMode) {
+                    camera.rotation.order = 'YXZ';
+                    camera.rotation.y = yaw;
+                    camera.rotation.x = pitch;
+
+                    let moveForward = 0, moveRight = 0;
+                    if (keys['KeyW'] || keys['ArrowUp']) moveForward += 1;
+                    if (keys['KeyS'] || keys['ArrowDown']) moveForward -= 1;
+                    if (keys['KeyA'] || keys['ArrowLeft']) moveRight -= 1;
+                    if (keys['KeyD'] || keys['ArrowRight']) moveRight += 1;
+
+                    if (joystick.active) {
+                        moveForward -= joystick.moveY;
+                        moveRight += joystick.moveX;
+                    }
+                    if (moveForward !== 0 || moveRight !== 0) isMoving = true;
+
+                    if (GAME.sprinting && isMoving && GAME.stamina > 0) {
+                        activeSpeed = GAME.sprintSpeed;
+                        GAME.stamina = Math.max(0, GAME.stamina - GAME.sprintDrainRate * delta);
+                        GAME.sprintDurationTimer += delta;
+                        GAME.staminaRegenTimer = Math.min(1.5, 0.2 + GAME.sprintDurationTimer * 0.15);
+                        if (GAME.stamina <= 0) toggleSprint(false);
+                    } else {
+                        if (GAME.staminaRegenTimer > 0) GAME.staminaRegenTimer -= delta;
+                        else GAME.stamina = Math.min(GAME.maxStamina, GAME.stamina + GAME.staminaRegenRate * delta);
+                    }
+
+                    const staminaPercent = Math.round((GAME.stamina / GAME.maxStamina) * 100);
+                    document.getElementById('stamina-bar').style.width = staminaPercent + '%';
+                    document.getElementById('stamina-text').innerText = staminaPercent + '%';
+
+                    if (isMoving) {
+                        const dir = new THREE.Vector3(moveRight, 0, -moveForward).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+                        const moveStep = dir.multiplyScalar(activeSpeed * delta);
+                        
+                        const targetX = camera.position.clone(); targetX.x += moveStep.x;
+                        if (!checkCollisionAtPosition(targetX, playerRadius)) camera.position.x = targetX.x;
+
+                        const targetZ = camera.position.clone(); targetZ.z += moveStep.z;
+                        if (!checkCollisionAtPosition(targetZ, playerRadius)) camera.position.z = targetZ.z;
+
+                        GAME.headbobTimer += delta * ((activeSpeed === GAME.sprintSpeed) ? 14 : 9);
+                        camera.position.y = GAME.baseCameraY + Math.sin(GAME.headbobTimer) * ((activeSpeed === GAME.sprintSpeed) ? 0.08 : 0.04);
+                    } else {
+                        camera.position.y += (GAME.baseCameraY - camera.position.y) * 0.1;
+                    }
+
+                    camera.position.x = Math.max(-halfSize + 1.5, Math.min(halfSize - 1.5, camera.position.x));
+                    camera.position.z = Math.max(-halfSize + 1.5, Math.min(halfSize - 1.5, camera.position.z));
+                }
+
+                const playerPos = new THREE.Vector3(camera.position.x, 0, camera.position.z);
+                let nearStation = null;
+                taskStations.forEach(station => {
+                    if (!(station.isGeneratorGroup ? station.groupState.completed : station.completed)) {
+                        if (playerPos.distanceTo(station.pos) < 3.2) nearStation = station;
+                    }
+                });
+
+                GAME.activeTaskStation = nearStation;
+                const promptEl = document.getElementById('interaction-prompt');
+                if (nearStation && !GAME.inPuzzle) {
+                    promptEl.style.display = 'block';
+                    const curLayer = nearStation.isGeneratorGroup ? nearStation.groupState.currentLayer : nearStation.currentLayer;
+                    promptEl.innerText = `PRESS INTERACT FOR ${nearStation.name.toUpperCase()} (${curLayer + 1}/5)`;
+                } else {
+                    promptEl.style.display = 'none';
+                }
+
+                if (exitGroup.visible && playerPos.distanceTo(new THREE.Vector3(0, 0, -135)) < 3.5) {
+                    GAME.ended = true;
+                    SAVE.coins += 10;
+                    saveGame();
+                    document.getElementById('victory-coin-msg').innerText = `You earned +10 coins! Total: ${SAVE.coins} 🪙`;
+                    document.getElementById('victory-modal').style.display = 'flex';
+                    if (document.exitPointerLock) document.exitPointerLock();
+                }
+
+                // Enoch AI & States
+                if (GAME.enochStunnedTimer > 0) {
+                    GAME.enochStunnedTimer -= delta;
+                } else if (GAME.enochKnockedTimer > 0) {
+                    GAME.enochKnockedTimer -= delta;
+                } else {
+                    const enochPos = new THREE.Vector3(enochGroup.position.x, 0, enochGroup.position.z);
+                    const distToPlayer = enochPos.distanceTo(playerPos);
+                    const dangerOverlay = document.getElementById('danger-overlay');
+
+                    let targetDest = null;
+                    let enochSpeed = GAME.enochWanderSpeed;
+                    let spotting = false;
+
+                    if (distToPlayer < GAME.enochDetectRadius) {
+                        const toPlayer = new THREE.Vector3().subVectors(playerPos, enochPos).normalize();
+                        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(enochGroup.quaternion);
+                        if (forward.angleTo(toPlayer) <= GAME.enochFOV / 2) spotting = true;
+                    }
+
+                    if (spotting) {
+                        enochAI.state = 'chase';
+                        targetDest = playerPos.clone();
+                        enochSpeed = GAME.enochChaseSpeed;
+                        dangerOverlay.style.boxShadow = `inset 0 0 100px rgba(255, 0, 0, ${(1 - (distToPlayer / GAME.enochDetectRadius)) * 0.85})`;
+
+                        if (GAME.inPuzzle) closePuzzleModal();
+
+                        if (distToPlayer < GAME.enochKillRadius && GAME.invincibleTimer <= 0) {
+                            GAME.ended = true;
+                            document.getElementById('gameover-modal').style.display = 'flex';
+                            if (document.exitPointerLock) document.exitPointerLock();
+                        }
+                    } else {
+                        enochAI.state = 'wander';
+                        dangerOverlay.style.boxShadow = 'inset 0 0 100px rgba(255, 0, 0, 0)';
+                        if (enochPos.distanceTo(enochAI.targetDestination) < 3.0) enochAI.targetDestination = getSmartWanderTarget();
+                        targetDest = enochAI.targetDestination.clone();
+                    }
+
+                    if (targetDest) {
+                        const moveDir = new THREE.Vector3().subVectors(targetDest, enochPos).normalize();
+                        const step = moveDir.clone().multiplyScalar(enochSpeed * delta);
+                        const nextX = enochPos.clone(); nextX.x += step.x;
+                        const nextZ = enochPos.clone(); nextZ.z += step.z;
+
+                        if (!checkCollisionAtPosition(nextX, enochRadius) && !checkCollisionAtPosition(nextZ, enochRadius)) {
+                            enochGroup.position.add(step);
+                        } else {
+                            enochAI.targetDestination = getSmartWanderTarget();
+                        }
+
+                        const tempMat = new THREE.Matrix4().lookAt(enochGroup.position, targetDest.clone().setY(enochGroup.position.y), enochGroup.up);
+                        enochGroup.quaternion.slerp(new THREE.Quaternion().setFromRotationMatrix(tempMat), 0.18);
+
+                        const legAnim = Math.sin(clock.getElapsedTime() * ((enochAI.state === 'chase') ? 14 : 7)) * ((enochAI.state === 'chase') ? 0.35 : 0.2);
+                        leftLeg.rotation.x = legAnim; rightLeg.rotation.x = -legAnim;
+                        leftArm.rotation.x = -legAnim; rightArm.rotation.x = keystringVal = legAnim;
+                    }
+                }
+            }
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
